@@ -1,64 +1,54 @@
 #include <Servo.h> 
 
-Servo servo;
+Servo servox;
 Servo servoy;
 
-int pos;             // servo angle 0-180
+int pos;
 int i;               // iterator
 int t=90;    //variable to move to according angle
 int u=90;
-int q;
-int a;
-int v;
-int f, z;
-// Common servo setup values
-int mini_Pul = 600;   // minimum servo position, us (microseconds)
-int maxi_Pul = 2400;  // maximum servo position, us
-
-
+int q,a,v,f,z;
 
 void setup() 
 {   
-  servo.attach(10, mini_Pul, maxi_Pul); // Attach each Servo object to digital pin 10 (left right)
-  servoy.attach(6, mini_Pul, maxi_Pul); // Attach each Servo object to digital pin 6 (up down)
+  servox.attach(10); // Attach each Servo object to a digital pin (left right)
+  servoy.attach(6); // Attach each Servo object to a digital pin (up down)
   Serial.begin(9600); // Open the serial connection, 9600 baud
+  servox.write(t);
   servoy.write(u);
-  servo.write(t);
 } 
-
-
 
 void loop() 
 { 
-  if (Serial.available() > 0) // Wait for serial input (min 3 bytes in buffer)
-    {         
-      pos = Serial.read();// Read the first byte
+  if (Serial.available() > 0) // Wait for serial input
+  {
+    pos = Serial.read();// Read the first byte
      
     // ----------X-axis--------------
           if (pos==49 || pos==1)//1=49
             {
-              a=servo.read();
+              a=servox.read();
              if(a>60){
              for(v=a; v>=60; v--){
-              servo.write(v);
+              servox.write(v);
               delay(15);
              }
              }
             }
          else if (pos==50)//2=50
            {
-             a=servo.read();
+             a=servox.read();
              if(a<120){
              for(v=a; v<=120; v++){
-              servo.write(v);
+              servox.write(v);
               delay(15);
              }
              }
            }  
            else if (pos==48)//0=48
           {
-          z=servo.read();
-            servo.write(z);
+          z=servox.read();
+            servox.write(z);
             delay(15);
           }
       // ----------Y-axis--------------
@@ -71,22 +61,10 @@ void loop()
               delay(15);
              }
              }
-//             if(q<40){
-//             for(v=q; v<=40; v++){
-//              servoy.write(v);
-//              delay(15);
-//             }
-//           } 
            }
            else if (pos==52)//4=52
            {
              q=servoy.read();
-//             if(q>120){
-//             for(v=q; v>=120; v--){
-//              myservo.write(v);
-//              delay(15);
-//             }
-//             }
              if(q<120){
              for(v=q; v<=120; v++){
               servoy.write(v);
@@ -100,9 +78,6 @@ void loop()
              servoy.write(f);
              delay(15);
            } 
-           
-         
-           Serial.flush();
-//        }
+     Serial.flush();
     }
 }
