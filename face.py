@@ -9,6 +9,7 @@
 from serial import Serial
 import time
 import cv2
+import sys
 
 #ser = serial.Serial('COM4', 9600, timeout=5)
 #time.sleep(2)
