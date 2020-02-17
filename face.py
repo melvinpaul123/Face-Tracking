@@ -9,11 +9,24 @@
 from serial import Serial
 import time
 import cv2
-import sys
+import numpy as np
 
 #ser = serial.Serial('COM4', 9600, timeout=5)
 #time.sleep(2)
 #print("Connection to arduino...")
+
+gamma=100
+
+def adjust_gamma(image, gamma=1.0):
+
+   invGamma = 1.0 / gamma
+   table = np.array([((i / 255.0) ** invGamma) * 255
+      for i in np.arange(0, 256)]).astype("uint8")
+
+   return cv2.LUT(image, table)
+
+def empty(a):
+    pass
 
 # This will send data to the arduino according to the x coordinate
 def angle_servox(angle):
@@ -50,35 +63,47 @@ def angle_servoy(angle):
         #ser.write(b'5')
         print("Stop")
 
+print("-> Loading the detector...")
 face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
-
+print("-> Starting Video Stream")
 cap = cv2.VideoCapture(0)
-
+cv2.namedWindow("img")
+cv2.resizeWindow("img",640,480)
+cv2.createTrackbar("gammacorec","img",gamma,250,empty)
 while 1:
     ret, img = cap.read()
-    cv2.resizeWindow('img', 600,500)
-    #cv2.line(img,(600,250),(0,250),(0,255,0),1)
-    #cv2.line(img,(300,0),(300,500),(0,255,0),1)
-    #cv2.circle(img, (300, 250), 5, (255, 255, 255), -1)
-    gray  = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    faces = face_cascade.detectMultiScale(gray, 1.3)
+    if ret == False:
+        print('Failed to capture frame from camera. Check camera index in cv2.VideoCapture(0) \n')
+        cv2.destroyAllWindows()
+        break
+    gamma = 0.01*(cv2.getTrackbarPos('gammacorec', 'img'))
+    adjusted = adjust_gamma(img, gamma=gamma)
+    #cv2.line(img,(600,250),(0,250),(0,255,0),1) (B,G,R)
+    gray  = cv2.cvtColor(adjusted, cv2.COLOR_BGR2GRAY)
+    faces = face_cascade.detectMultiScale(gray, scaleFactor = 1.3, minNeighbors = 5)
 
     for (x,y,w,h) in faces:
-        cv2.rectangle(img,(x,y),(x+w,y+h),(0,255,0),5)
+        cv2.rectangle(adjusted,(x,y),(x+w,y+h),(0,255,0),5)
         #cv2.rectangle(image, start_point, end_point, color, thickness)
-
-        angle_servox(x)
-        angle_servoy(y)
-
-      #this is very helpful for calibrating servomotors
-        print(x)
-        print(y)
-    
-
-    cv2.imshow('img',img)
+        cv2.circle(adjusted, (x, y), 5, (0, 0, 0), -1)
+        cv2.circle(adjusted, (x+h, y+w), 5, (255, 0, 0), -1)
+        # Center of roi (Rectangle)
+        xx = int(x+(x+h))/2
+        yy = int(y+(y+w))/2
+        center = (xx,yy)
+        a=int(xx)
+        b=int(yy)
+        cv2.circle(adjusted, (a, b), 5, (0, 0, 255), -1)
+        print ("center is:")
+        print(center)
+        angle_servox(xx)
+        angle_servoy(yy)
+        
+    cv2.imshow('img',adjusted)
    
     k = cv2.waitKey(30) & 0xff
     if k == 27:
+        print("-> Ending Video Stream")
         cap.release()
         cv2.destroyAllWindows()
         break
